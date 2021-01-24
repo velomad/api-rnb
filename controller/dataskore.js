@@ -3,7 +3,7 @@ const dataskoreServices = require("../services/dataskore");
 module.exports = {
   products: (req, res) => {
     const queries = req.query;
-    dataskoreServices.products(queries, (err, results) => {
+    dataskoreServices.products(queries, (err, results, count) => {
       if (err) {
         res.status(500).json({
           status: "error",
@@ -13,6 +13,8 @@ module.exports = {
         res.status(200).json({
           status: "success",
           category: queries.category,
+          totalProducts: count[0].totalProducts,
+          totalPages: Math.ceil(count[0].totalProducts / queries.limit),
           queries: queries,
           results: results.length,
           data: results,
@@ -49,8 +51,9 @@ module.exports = {
   },
 
   searchProducts: (req, res) => {
+    const queries = req.query;
     const searchTerm = req.query.term;
-    dataskoreServices.searchProducts(searchTerm, (err, results) => {
+    dataskoreServices.searchProducts(queries, searchTerm, (err, results, count) => {
       if (err) {
         res.status(500).json({
           status: "error",
@@ -59,9 +62,11 @@ module.exports = {
       } else {
         res.status(200).json({
           status: "success",
-          term: req.query.term,
+          term: queries.term,
+          totalProducts: count[0].totalProducts,
+          totalPages: Math.ceil(count[0].totalProducts / queries.limit),
           results: results.length,
-          data: results,
+          result: results,
         });
       }
     });

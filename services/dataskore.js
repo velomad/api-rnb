@@ -9,56 +9,140 @@ module.exports = {
     // params that will be passed instead of " ? "
     const params = [];
 
+    let count;
+
     // Calculation for getting an OFFSET
     const startIndex = (page - 1) * limit;
     // const endIndex = page * limit;
 
-    let sql = "SELECT * FROM products WHERE 1 = 1 ";
-    if (queries.website) {
-      sql += "AND website = ?";
-      params.push(queries.website);
-    }
-    if (queries.category) {
-      sql += "AND category = ?";
-      params.push(queries.category);
-    }
-    if (queries.gender) {
-      sql += "AND gender = ?";
-      params.push(queries.gender);
-    }
-    if (queries.discountPercent) {
-      sql += "AND discountPercent >= ?";
-      params.push(queries.discountPercent.gte);
-    }
-    if (queries.productPrice && queries.productPrice.gte) {
-      sql += "AND productPrice >= ?";
-      params.push(queries.productPrice.gte);
-    }
-    if (queries.productPrice && queries.productPrice.lte) {
-      sql += "AND productPrice <= ?";
-      params.push(queries.productPrice.lte);
-    }
-    if (queries.sort) {
-      if (queries.sort == "low") {
-        sql += " ORDER BY productPrice ASC";
-      } else if (queries.sort == "high") {
-        sql += "ORDER BY productPrice DESC";
-      } else if (queries.sort == "discount") {
-        sql += "ORDER BY discountPercent DESC";
-      } else if (queries.sort == "rating") {
-        sql += "ORDER BY productRating DESC";
-      }
-    }
-    if (page && limit) {
-      sql += `LIMIT ${limit} OFFSET ${startIndex}`;
-    }
-
-    pool.query(sql, params, (err, results) => {
+    pool.getConnection((err, connection) => {
       if (err) {
-        cb(err);
-      } else {
-        cb(null, results);
+        throw err;
       }
+      connection.beginTransaction((err) => {
+        if (err) {
+          throw err;
+        }
+        let countSql =
+          "SELECT COUNT(id) AS totalProducts FROM products WHERE 1 = 1 ";
+
+        if (queries.website) {
+          countSql += "AND website = ?";
+          params.push(queries.website);
+        }
+        if (queries.category) {
+          countSql += "AND category = ?";
+          params.push(queries.category);
+        }
+        if (queries.gender) {
+          countSql += "AND gender = ?";
+          params.push(queries.gender);
+        }
+        if (queries.discountPercent) {
+          countSql += "AND discountPercent >= ?";
+          params.push(queries.discountPercent.gte);
+        }
+        if (queries.productPrice && queries.productPrice.gte) {
+          countSql += "AND productPrice >= ?";
+          params.push(queries.productPrice.gte);
+        }
+        if (queries.productPrice && queries.productPrice.lte) {
+          countSql += "AND productPrice <= ?";
+          params.push(queries.productPrice.lte);
+        }
+        if (queries.sort) {
+          if (queries.sort == "low") {
+            countSql += " ORDER BY productPrice ASC";
+          } else if (queries.sort == "high") {
+            countSql += "ORDER BY productPrice DESC";
+          } else if (queries.sort == "discount") {
+            countSql += "ORDER BY discountPercent DESC";
+          } else if (queries.sort == "rating") {
+            countSql += "ORDER BY productRating DESC";
+          }
+        }
+        if (page && limit) {
+          countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+        }
+
+        connection.query(countSql, params, (err, results) => {
+          if (err) {
+            return connection.rollback((_) => {
+              throw err;
+            });
+          }
+          count = results;
+
+          let sql = "SELECT * FROM products WHERE 1 = 1 ";
+
+          if (queries.website) {
+            sql += "AND website = ?";
+            countSql += "AND website = ?";
+            params.push(queries.website);
+          }
+          if (queries.category) {
+            sql += "AND category = ?";
+            countSql += "AND category = ?";
+            params.push(queries.category);
+          }
+          if (queries.gender) {
+            sql += "AND gender = ?";
+            countSql += "AND gender = ?";
+            params.push(queries.gender);
+          }
+          if (queries.discountPercent) {
+            sql += "AND discountPercent >= ?";
+            countSql += "AND discountPercent >= ?";
+            params.push(queries.discountPercent.gte);
+          }
+          if (queries.productPrice && queries.productPrice.gte) {
+            sql += "AND productPrice >= ?";
+            countSql += "AND productPrice >= ?";
+            params.push(queries.productPrice.gte);
+          }
+          if (queries.productPrice && queries.productPrice.lte) {
+            sql += "AND productPrice <= ?";
+            countSql += "AND productPrice <= ?";
+            params.push(queries.productPrice.lte);
+          }
+          if (queries.sort) {
+            if (queries.sort == "low") {
+              sql += " ORDER BY productPrice ASC";
+              countSql += " ORDER BY productPrice ASC";
+            } else if (queries.sort == "high") {
+              sql += "ORDER BY productPrice DESC";
+              countSql += "ORDER BY productPrice DESC";
+            } else if (queries.sort == "discount") {
+              sql += "ORDER BY discountPercent DESC";
+              countSql += "ORDER BY discountPercent DESC";
+            } else if (queries.sort == "rating") {
+              sql += "ORDER BY productRating DESC";
+              countSql += "ORDER BY productRating DESC";
+            }
+          }
+          if (page && limit) {
+            sql += `LIMIT ${limit} OFFSET ${startIndex}`;
+            countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+          }
+
+          connection.query(sql, params, (err, results) => {
+            if (err) {
+              return connection.rollback((_) => {
+                throw err;
+              });
+            }
+            connection.commit((err) => {
+              if (err) {
+                connection.rollback((_) => {
+                  throw err;
+                });
+              }
+              connection.release();
+              cb(null, results, count);
+            });
+          });
+        });
+      });
     });
   },
 
@@ -73,15 +157,140 @@ module.exports = {
     });
   },
 
-  searchProducts: (term, cb) => {
-    const sql = `Select * from products where displayCategory like '%${term}%' OR displayCategory like '% ${term}%'`;
+  searchProducts: (queries, term, cb) => {
+    // destructed page and limit for pagination
+    const { page, limit } = queries;
 
-    pool.query(sql, (err, results) => {
+    // params that will be passed instead of " ? "
+    const params = [];
+
+    let count;
+
+    let pageSql = "";
+
+    // Calculation for getting an OFFSET
+    const startIndex = (page - 1) * limit;
+    // const endIndex = page * limit;
+
+    pool.getConnection((err, connection) => {
       if (err) {
-        cb(err);
-      } else {
-        cb(null, results);
+        throw err;
       }
+      connection.beginTransaction((err) => {
+        if (err) {
+          throw err;
+        }
+        let countSql =
+          "SELECT COUNT(id) AS totalProducts FROM products WHERE 1 = 1 ";
+
+        if (queries.website) {
+          countSql += "AND website = ?";
+          params.push(queries.website);
+        }
+        if (queries.category) {
+          countSql += "AND category = ?";
+          params.push(queries.category);
+        }
+        if (queries.gender) {
+          countSql += "AND gender = ?";
+          params.push(queries.gender);
+        }
+        if (queries.discountPercent) {
+          countSql += "AND discountPercent >= ?";
+          params.push(queries.discountPercent.gte);
+        }
+        if (queries.productPrice && queries.productPrice.gte) {
+          countSql += "AND productPrice >= ?";
+          params.push(queries.productPrice.gte);
+        }
+        if (queries.productPrice && queries.productPrice.lte) {
+          countSql += "AND productPrice <= ?";
+          params.push(queries.productPrice.lte);
+        }
+        if (queries.sort) {
+          if (queries.sort == "low") {
+            countSql += " ORDER BY productPrice ASC";
+          } else if (queries.sort == "high") {
+            countSql += "ORDER BY productPrice DESC";
+          } else if (queries.sort == "discount") {
+            countSql += "ORDER BY discountPercent DESC";
+          } else if (queries.sort == "rating") {
+            countSql += "ORDER BY productRating DESC";
+          }
+        }
+        if (page && limit) {
+          countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+        }
+
+        connection.query(countSql, params, (err, results) => {
+          if (err) {
+            return connection.rollback((_) => {
+              throw err;
+            });
+          }
+          count = results;
+
+          let filterSql = "";
+
+          if (queries.website) {
+            filterSql += "AND website = ?";
+            params.push(queries.website);
+          }
+          if (queries.category) {
+            filterSql += "AND category = ?";
+            params.push(queries.category);
+          }
+          if (queries.gender) {
+            filterSql += "AND gender = ?";
+            params.push(queries.gender);
+          }
+          if (queries.discountPercent) {
+            filterSql += "AND discountPercent >= ?";
+            params.push(queries.discountPercent.gte);
+          }
+          if (queries.productPrice && queries.productPrice.gte) {
+            filterSql += "AND productPrice >= ?";
+            params.push(queries.productPrice.gte);
+          }
+          if (queries.productPrice && queries.productPrice.lte) {
+            filterSql += "AND productPrice <= ?";
+            params.push(queries.productPrice.lte);
+          }
+          if (queries.sort) {
+            if (queries.sort == "low") {
+              filterSql += " ORDER BY productPrice ASC";
+            } else if (queries.sort == "high") {
+              filterSql += "ORDER BY productPrice DESC";
+            } else if (queries.sort == "discount") {
+              filterSql += "ORDER BY discountPercent DESC";
+            } else if (queries.sort == "rating") {
+              filterSql += "ORDER BY productRating DESC";
+            }
+          }
+          if (page && limit) {
+            pageSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+          }
+
+          const sql = `Select * from products where 1 = 1 ${filterSql} AND displayCategory like '%${term}%' OR displayCategory like '% ${term}%' ${pageSql}`;
+
+          connection.query(sql, params, (err, results) => {
+            if (err) {
+              return connection.rollback((_) => {
+                throw err;
+              });
+            }
+            connection.commit((err) => {
+              if (err) {
+                connection.rollback((_) => {
+                  throw err;
+                });
+              }
+              connection.release();
+              cb(null, results, count);
+            });
+          });
+        });
+      });
     });
   },
 
