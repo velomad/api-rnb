@@ -53,28 +53,33 @@ module.exports = {
   searchProducts: (req, res) => {
     const queries = req.query;
     const searchTerm = req.query.term;
-    dataskoreServices.searchProducts(queries, searchTerm, (err, results, count) => {
-      if (err) {
-        res.status(500).json({
-          status: "error",
-          message: err,
-        });
-      } else {
-        res.status(200).json({
-          status: "success",
-          term: queries.term,
-          totalProducts: count[0].totalProducts,
-          totalPages: Math.ceil(count[0].totalProducts / queries.limit),
-          results: results.length,
-          result: results,
-        });
+    dataskoreServices.searchProducts(
+      queries,
+      searchTerm,
+      (err, results, count) => {
+        if (err) {
+          res.status(500).json({
+            status: "error",
+            message: err,
+          });
+        } else {
+          res.status(200).json({
+            status: "success",
+            term: queries.term,
+            totalProducts: count[0].totalProducts,
+            totalPages: Math.ceil(count[0].totalProducts / queries.limit),
+            results: results.length,
+            result: results,
+          });
+        }
       }
-    });
+    );
   },
 
   singleProduct: (req, res) => {
     const productId = req.query.id;
     dataskoreServices.singleProduct(productId, (err, results) => {
+      results[0].size = JSON.parse(results[0].size);
       if (err) {
         res.status(500).json({
           status: "error",
@@ -83,7 +88,7 @@ module.exports = {
       } else {
         res.status(200).json({
           status: "success",
-          result: results[0],
+          result: results,
         });
       }
     });
