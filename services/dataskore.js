@@ -50,20 +50,20 @@ module.exports = {
           countSql += "AND productPrice <= ?";
           params.push(queries.productPrice.lte);
         }
-        if (queries.sort) {
-          if (queries.sort == "low") {
-            countSql += " ORDER BY productPrice ASC";
-          } else if (queries.sort == "high") {
-            countSql += "ORDER BY productPrice DESC";
-          } else if (queries.sort == "discount") {
-            countSql += "ORDER BY discountPercent DESC";
-          } else if (queries.sort == "rating") {
-            countSql += "ORDER BY productRating DESC";
-          }
-        }
-        if (page && limit) {
-          countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
-        }
+        // if (queries.sort) {
+        //   if (queries.sort == "low") {
+        //     countSql += "ORDER BY productPrice ASC";
+        //   } else if (queries.sort == "high") {
+        //     countSql += "ORDER BY productPrice DESC";
+        //   } else if (queries.sort == "discount") {
+        //     countSql += "ORDER BY discountPercent DESC";
+        //   } else if (queries.sort == "rating") {
+        //     countSql += "ORDER BY productRating DESC";
+        //   }
+        // }
+        // if (page && limit) {
+        //   countSql += ` LIMIT ${limit} OFFSET ${startIndex}`;
+        // }
 
         connection.query(countSql, params, (err, results) => {
           if (err) {
@@ -73,56 +73,45 @@ module.exports = {
           }
           count = results;
 
-          let sql = "SELECT * FROM products WHERE 1 = 1 ";
+          let sql = "SELECT * FROM products WHERE 1 = 1 AND productPrice > 0 ";
 
           if (queries.website) {
             sql += "AND website = ?";
-            countSql += "AND website = ?";
             params.push(queries.website);
           }
           if (queries.category) {
             sql += "AND category = ?";
-            countSql += "AND category = ?";
             params.push(queries.category);
           }
           if (queries.gender) {
             sql += "AND gender = ?";
-            countSql += "AND gender = ?";
             params.push(queries.gender);
           }
           if (queries.discountPercent) {
             sql += "AND discountPercent >= ?";
-            countSql += "AND discountPercent >= ?";
             params.push(queries.discountPercent.gte);
           }
           if (queries.productPrice && queries.productPrice.gte) {
             sql += "AND productPrice >= ?";
-            countSql += "AND productPrice >= ?";
             params.push(queries.productPrice.gte);
           }
           if (queries.productPrice && queries.productPrice.lte) {
             sql += "AND productPrice <= ?";
-            countSql += "AND productPrice <= ?";
             params.push(queries.productPrice.lte);
           }
           if (queries.sort) {
             if (queries.sort == "low") {
               sql += " ORDER BY productPrice ASC";
-              countSql += " ORDER BY productPrice ASC";
             } else if (queries.sort == "high") {
               sql += "ORDER BY productPrice DESC";
-              countSql += "ORDER BY productPrice DESC";
             } else if (queries.sort == "discount") {
               sql += "ORDER BY discountPercent DESC";
-              countSql += "ORDER BY discountPercent DESC";
             } else if (queries.sort == "rating") {
               sql += "ORDER BY productRating DESC";
-              countSql += "ORDER BY productRating DESC";
             }
           }
           if (page && limit) {
-            sql += `LIMIT ${limit} OFFSET ${startIndex}`;
-            countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+            sql += ` LIMIT ${limit} OFFSET ${startIndex}`;
           }
 
           connection.query(sql, params, (err, results) => {
@@ -181,7 +170,7 @@ module.exports = {
           throw err;
         }
         let countSql =
-          "SELECT COUNT(id) AS totalProducts FROM products WHERE 1 = 1 ";
+          "SELECT COUNT(id) AS totalProducts FROM products WHERE 1 = 1 AND productPrice > 0 ";
 
         if (queries.website) {
           countSql += "AND website = ?";
@@ -207,20 +196,20 @@ module.exports = {
           countSql += "AND productPrice <= ?";
           params.push(queries.productPrice.lte);
         }
-        if (queries.sort) {
-          if (queries.sort == "low") {
-            countSql += " ORDER BY productPrice ASC";
-          } else if (queries.sort == "high") {
-            countSql += "ORDER BY productPrice DESC";
-          } else if (queries.sort == "discount") {
-            countSql += "ORDER BY discountPercent DESC";
-          } else if (queries.sort == "rating") {
-            countSql += "ORDER BY productRating DESC";
-          }
-        }
-        if (page && limit) {
-          countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
-        }
+        // if (queries.sort) {
+        //   if (queries.sort == "low") {
+        //     countSql += " ORDER BY productPrice ASC";
+        //   } else if (queries.sort == "high") {
+        //     countSql += "ORDER BY productPrice DESC";
+        //   } else if (queries.sort == "discount") {
+        //     countSql += "ORDER BY discountPercent DESC";
+        //   } else if (queries.sort == "rating") {
+        //     countSql += "ORDER BY productRating DESC";
+        //   }
+        // }
+        // if (page && limit) {
+        //   countSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+        // }
 
         connection.query(countSql, params, (err, results) => {
           if (err) {
@@ -231,6 +220,8 @@ module.exports = {
           count = results;
 
           let filterSql = "";
+
+          let sortSql = "";
 
           if (queries.website) {
             filterSql += "AND website = ?";
@@ -258,20 +249,20 @@ module.exports = {
           }
           if (queries.sort) {
             if (queries.sort == "low") {
-              filterSql += " ORDER BY productPrice ASC";
+              sortSql += " ORDER BY productPrice ASC";
             } else if (queries.sort == "high") {
-              filterSql += "ORDER BY productPrice DESC";
+              sortSql += " ORDER BY productPrice DESC";
             } else if (queries.sort == "discount") {
-              filterSql += "ORDER BY discountPercent DESC";
+              sortSql += " ORDER BY discountPercent DESC";
             } else if (queries.sort == "rating") {
-              filterSql += "ORDER BY productRating DESC";
+              sortSql += " ORDER BY productRating DESC";
             }
           }
           if (page && limit) {
-            pageSql += `LIMIT ${limit} OFFSET ${startIndex}`;
+            pageSql += ` LIMIT ${limit} OFFSET ${startIndex}`;
           }
 
-          const sql = `Select * from products where 1 = 1 ${filterSql} AND displayCategory like '%${term}%' OR displayCategory like '% ${term}%' ${pageSql}`;
+          const sql = `Select * from products where 1 = 1 AND productPrice > 0 ${filterSql} AND displayCategory like '%${term}%' OR displayCategory like '% ${term}%' ${sortSql} ${pageSql}`;
 
           connection.query(sql, params, (err, results) => {
             if (err) {
