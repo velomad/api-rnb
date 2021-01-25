@@ -262,7 +262,7 @@ module.exports = {
             pageSql += ` LIMIT ${limit} OFFSET ${startIndex}`;
           }
 
-          const sql = `Select * from products where 1 = 1 AND productPrice > 0 ${filterSql} AND displayCategory like '%${term}%' OR displayCategory like '% ${term}%' ${sortSql} ${pageSql}`;
+          const sql = `Select products.id AS _id,  products.* from products where 1 = 1 AND productPrice > 0 ${filterSql} AND displayCategory like '%${term}%' OR displayCategory like '% ${term}%' ${sortSql} ${pageSql}`;
 
           connection.query(sql, params, (err, results) => {
             if (err) {
