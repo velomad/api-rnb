@@ -90,7 +90,7 @@ module.exports = {
       } else {
         res.status(200).json({
           status: "success",
-          result: results,
+          result: results[0],
         });
       }
     });
