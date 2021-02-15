@@ -79,7 +79,9 @@ module.exports = {
   singleProduct: (req, res) => {
     const productId = req.query.id;
     dataskoreServices.singleProduct(productId, (err, results) => {
-      results[0].size = JSON.parse(results[0].size);
+      if (results[0].size) {
+        results[0].size = JSON.parse(results[0].size);
+      }
       if (err) {
         res.status(500).json({
           status: "error",
