@@ -3,8 +3,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 // initialize app
 const app = express();
-const port =  process.env.PORT || 5000 ;
-const path = require("path")
+const port = process.env.PORT || 5000;
+const path = require("path");
 
 // Middlewares
 app.use(express.json());
@@ -14,6 +14,7 @@ dotenv.config();
 
 // routes
 app.use("/api/v1", require("./routes/dataskore"));
+app.use("/api/v1/offerzone", require("./routes/earnkaro"));
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "client/build")));
