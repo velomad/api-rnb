@@ -73,7 +73,8 @@ module.exports = {
           }
           count = results;
 
-          let sql = "SELECT * FROM products WHERE 1 = 1 AND productPrice > 0 ";
+          let sql =
+            "Select products.id AS _id,  products.* FROM products WHERE 1 = 1 AND productPrice > 0 ";
 
           if (queries.website) {
             sql += "AND website = ?";

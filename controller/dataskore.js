@@ -17,7 +17,7 @@ module.exports = {
           totalPages: Math.ceil(count[0].totalProducts / queries.limit),
           queries: queries,
           results: results.length,
-          data: results,
+          data: { result: results },
         });
       }
     });
@@ -69,7 +69,7 @@ module.exports = {
             totalProducts: count[0].totalProducts,
             totalPages: Math.ceil(count[0].totalProducts / queries.limit),
             results: results.length,
-            result: results,
+            data: { result: results },
           });
         }
       }
@@ -85,7 +85,7 @@ module.exports = {
       if (err) {
         res.status(500).json({
           status: "error",
-          message: err, 
+          message: err,
         });
       } else {
         res.status(200).json({
